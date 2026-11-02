@@ -229,3 +229,4 @@ export const SectionPlaceholder: FC<SectionPlaceholderProps> = ({
     </div>
   );
 };
+

@@ -42,3 +42,4 @@ export interface AdminNotification {
   isUnread: boolean;
   type: 'info' | 'success' | 'alert';
 }
+

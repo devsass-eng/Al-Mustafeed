@@ -22,3 +22,4 @@ export interface LoginFormErrors {
   password?: string;
   general?: string;
 }
+

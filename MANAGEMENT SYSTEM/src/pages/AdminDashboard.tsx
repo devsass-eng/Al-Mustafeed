@@ -135,3 +135,4 @@ export const AdminDashboard: FC<AdminDashboardProps> = ({ onLogout }) => {
     </div>
   );
 };
+

@@ -157,3 +157,4 @@ export const QuickNavGrid: FC<QuickNavGridProps> = ({ onSelectTab }) => {
     </div>
   );
 };
+

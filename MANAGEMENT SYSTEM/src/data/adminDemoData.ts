@@ -109,3 +109,4 @@ export const NAV_ITEMS = [
   { id: 'public-site', label: 'Public Site', icon: 'Globe', description: 'Public content & admissions portal' },
   { id: 'settings', label: 'Settings', icon: 'Settings', description: 'System preferences & admin tools' },
 ] as const;
+

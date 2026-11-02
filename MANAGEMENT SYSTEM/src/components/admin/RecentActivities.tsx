@@ -120,3 +120,4 @@ export const RecentActivities: FC<RecentActivitiesProps> = ({ activities }) => {
     </div>
   );
 };
+
