@@ -1,0 +1,16 @@
+{
+  "name": "Al-Mustafeed Tahfeez Management System",
+  "short_name": "Al-Mustafeed",
+  "description": "Secure Tahfeez Management System for Al-Mustafeed Islamic Institution",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#064e3b",
+  "theme_color": "#064e3b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64 128x128 256x256 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

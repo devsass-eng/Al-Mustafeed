@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#064e3b"/>
+  <path d="M32 8L39 17.5L51 17.5L47.5 29.5L56 38.5L44.5 42L44.5 54L32 47.5L19.5 54L19.5 42L8 38.5L16.5 29.5L13 17.5L25 17.5L32 8Z" fill="#042f2e" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Open Quran / Book -->
+  <path d="M22 28C26 26.5 30 27.5 32 30C34 27.5 38 26.5 42 28V43C38 41.5 34 42.5 32 45C30 42.5 26 41.5 22 43V28Z" fill="#fef3c7" stroke="#b45309" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M32 30V45" stroke="#b45309" stroke-width="1.5"/>
+  <circle cx="32" cy="21" r="2.5" fill="#f59e0b"/>
+</svg>
