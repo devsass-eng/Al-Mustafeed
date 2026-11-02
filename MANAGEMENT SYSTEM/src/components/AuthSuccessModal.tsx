@@ -1,15 +1,17 @@
 import type { FC } from 'react';
 import type { DemoUser } from '../types/auth';
-import { CheckCircle2, ShieldCheck, ArrowLeft, Sparkles } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, ArrowLeft, Sparkles, LayoutDashboard } from 'lucide-react';
 
 interface AuthSuccessModalProps {
   user: DemoUser;
   onLogout: () => void;
+  onProceedToDashboard?: () => void;
 }
 
 export const AuthSuccessModal: FC<AuthSuccessModalProps> = ({
   user,
   onLogout,
+  onProceedToDashboard,
 }) => {
   const roleBadgeStyles: Record<string, string> = {
     dev: 'bg-purple-100 text-purple-800 border-purple-200',
@@ -22,6 +24,8 @@ export const AuthSuccessModal: FC<AuthSuccessModalProps> = ({
     admin: 'from-emerald-950 to-teal-900',
     teacher: 'from-emerald-900 to-amber-950',
   };
+
+  const isAdmin = user.role === 'admin';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
@@ -72,25 +76,40 @@ export const AuthSuccessModal: FC<AuthSuccessModalProps> = ({
           </div>
 
           {/* Development Milestone Notice */}
-          <div className="mt-5 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-900 flex items-start gap-3">
-            <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="mt-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-xs text-emerald-950 flex items-start gap-3">
+            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-amber-950">Phase 1: Login Verification Ready</p>
-              <p className="mt-0.5 text-amber-800 leading-relaxed">
-                As per the strict page-by-page development rules, the {user.roleTitle} dashboard will be built in the next task upon your review and approval.
+              <p className="font-semibold text-emerald-950">
+                {isAdmin ? 'Admin Dashboard is Ready' : `${user.roleTitle} Dashboard Scheduled`}
+              </p>
+              <p className="mt-0.5 text-emerald-800 leading-relaxed">
+                {isAdmin
+                  ? 'Click below to enter the Al-Mustafeed Admin Dashboard control centre.'
+                  : `As per the page-by-page development rules, the ${user.roleTitle} dashboard will be built when requested.`}
               </p>
             </div>
           </div>
 
-          {/* Action button to test another login */}
+          {/* Action buttons */}
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            {isAdmin && onProceedToDashboard ? (
+              <button
+                onClick={onProceedToDashboard}
+                type="button"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Enter Admin Dashboard</span>
+              </button>
+            ) : null}
+
             <button
               onClick={onLogout}
               type="button"
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all shadow-xs cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
-              Test Another Login Account
+              <span>Back to Login</span>
             </button>
           </div>
         </div>

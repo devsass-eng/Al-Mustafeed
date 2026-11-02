@@ -20,7 +20,11 @@ import type { LoginFormState, LoginFormErrors, DemoUser } from '../types/auth';
 
 const STORAGE_REMEMBER_KEY = 'almustafeed_remembered_identifier';
 
-export const LoginPage: FC = () => {
+interface LoginPageProps {
+  onLoginSuccess?: (user: DemoUser) => void;
+}
+
+export const LoginPage: FC<LoginPageProps> = ({ onLoginSuccess }) => {
   // Form State
   const [formData, setFormData] = useState<LoginFormState>({
     identifier: '',
@@ -480,6 +484,11 @@ export const LoginPage: FC = () => {
           onLogout={() => {
             setAuthenticatedUser(null);
             setFormData((prev) => ({ ...prev, password: '' }));
+          }}
+          onProceedToDashboard={() => {
+            if (authenticatedUser.role === 'admin' && onLoginSuccess) {
+              onLoginSuccess(authenticatedUser);
+            }
           }}
         />
       )}
