@@ -130,3 +130,4 @@ export const AssignClassModal: FC<AssignClassModalProps> = ({
     </div>
   );
 };
+

@@ -47,6 +47,7 @@ export const AddTeacherModal: FC<AddTeacherModalProps> = ({
       assignedClasses: assignedClass === 'unassigned' ? [] : [assignedClass],
       status: 'active',
       joinedDate: 'Nov 2026',
+      accountCreationDate: '02 Nov 2026, 09:00 AM',
       studentCount: assignedClass === 'unassigned' ? 0 : 35,
       qualification: qualification.trim() || 'Tahfeez & Recitation Instructor',
       accountCreated: createAccount,
@@ -227,3 +228,4 @@ export const AddTeacherModal: FC<AddTeacherModalProps> = ({
     </div>
   );
 };
+

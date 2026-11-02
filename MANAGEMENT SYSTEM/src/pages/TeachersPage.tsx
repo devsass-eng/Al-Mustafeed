@@ -4,28 +4,20 @@ import {
   UserPlus,
   Filter,
   UserCheck,
-  Eye,
-  Edit,
   Layers,
-  Users,
-  ArrowRightLeft,
-  Ban,
-  RotateCcw,
-  Phone,
-  MoreVertical,
   CheckCircle2,
   X,
   XCircle,
+  ChevronRight,
 } from 'lucide-react';
 import { INITIAL_TEACHERS, AVAILABLE_CLASSES } from '../data/teachersDemoData';
 import type { Teacher } from '../types/teacher';
 import { AddTeacherModal } from '../components/teachers/AddTeacherModal';
-import { TeacherDetailsModal } from '../components/teachers/TeacherDetailsModal';
 import { EditTeacherModal } from '../components/teachers/EditTeacherModal';
 import { AssignClassModal } from '../components/teachers/AssignClassModal';
-import { ViewStudentsModal } from '../components/teachers/ViewStudentsModal';
 import { TransferStudentsModal } from '../components/teachers/TransferStudentsModal';
 import { SuspendConfirmModal } from '../components/teachers/SuspendConfirmModal';
+import { TeacherDetailsView } from '../components/teachers/TeacherDetailsView';
 
 interface TeachersPageProps {
   onBackToDashboard?: () => void;
@@ -35,22 +27,20 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
   // State: Teachers List
   const [teachers, setTeachers] = useState<Teacher[]>(INITIAL_TEACHERS);
 
+  // State: Active Selected Teacher for Dedicated Teacher Details View
+  const [activeTeacherId, setActiveTeacherId] = useState<string | null>(null);
+
   // State: Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [classFilter, setClassFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
 
-  // State: Modals & Selected Teacher
+  // State: Action Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
-  const [activeModal, setActiveModal] = useState<
-    'details' | 'edit' | 'assign' | 'students' | 'transfer' | 'suspend' | null
-  >(null);
+  const [modalTargetTeacher, setModalTargetTeacher] = useState<Teacher | null>(null);
+  const [activeModal, setActiveModal] = useState<'edit' | 'assign' | 'transfer' | 'suspend' | null>(null);
 
-  // State: Mobile / Desktop Action Dropdown Menu per row
-  const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
-
-  // State: Notification Toast
+  // State: Toast Feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -58,7 +48,12 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Filtered teachers list
+  // Currently viewed teacher for Details View
+  const currentViewedTeacher = useMemo(() => {
+    return teachers.find((t) => t.id === activeTeacherId) || null;
+  }, [teachers, activeTeacherId]);
+
+  // Filtered teachers list (searches name or phone; filters by class or status)
   const filteredTeachers = useMemo(() => {
     return teachers.filter((t) => {
       const query = searchQuery.trim().toLowerCase();
@@ -124,7 +119,7 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
         return t;
       })
     );
-    showToast(`Successfully transferred ${count} students to new instructor.`);
+    showToast(`Successfully transferred ${count} students.`);
   };
 
   const handleToggleStatus = (teacherId: string) => {
@@ -142,17 +137,17 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
     );
   };
 
-  const openModal = (
-    modalType: 'details' | 'edit' | 'assign' | 'students' | 'transfer' | 'suspend',
+  const openActionModal = (
+    modalType: 'edit' | 'assign' | 'transfer' | 'suspend',
     teacher: Teacher
   ) => {
-    setSelectedTeacher(teacher);
+    setModalTargetTeacher(teacher);
     setActiveModal(modalType);
-    setOpenActionMenuId(null);
   };
 
-  const closeModal = () => {
+  const closeActionModal = () => {
     setActiveModal(null);
+    setModalTargetTeacher(null);
   };
 
   const resetFilters = () => {
@@ -161,6 +156,71 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
     setStatusFilter('all');
   };
 
+  // IF AN INDIVIDUAL TEACHER IS OPENED -> RENDER THE TEACHER DETAILS VIEW
+  if (currentViewedTeacher) {
+    return (
+      <>
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-20 right-4 z-50 bg-emerald-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-emerald-700 flex items-center gap-2.5 text-xs font-semibold animate-slideDown">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{toastMessage}</span>
+            <button
+              onClick={() => setToastMessage(null)}
+              className="ml-2 text-emerald-300 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        <TeacherDetailsView
+          teacher={currentViewedTeacher}
+          onBack={() => setActiveTeacherId(null)}
+          onEdit={() => openActionModal('edit', currentViewedTeacher)}
+          onChangeClass={() => openActionModal('assign', currentViewedTeacher)}
+          onTransferStudents={() => openActionModal('transfer', currentViewedTeacher)}
+          onToggleSuspend={() => openActionModal('suspend', currentViewedTeacher)}
+        />
+
+        {/* Action Modals */}
+        <EditTeacherModal
+          teacher={modalTargetTeacher}
+          isOpen={activeModal === 'edit'}
+          onClose={closeActionModal}
+          onUpdateTeacher={handleUpdateTeacher}
+        />
+
+        <AssignClassModal
+          teacher={modalTargetTeacher}
+          isOpen={activeModal === 'assign'}
+          onClose={closeActionModal}
+          onAssignClasses={handleAssignClasses}
+        />
+
+        <TransferStudentsModal
+          sourceTeacher={modalTargetTeacher}
+          allTeachers={teachers}
+          isOpen={activeModal === 'transfer'}
+          onClose={closeActionModal}
+          onTransfer={handleTransferStudents}
+        />
+
+        <SuspendConfirmModal
+          teacher={modalTargetTeacher}
+          isOpen={activeModal === 'suspend'}
+          onClose={closeActionModal}
+          onConfirm={() => {
+            if (modalTargetTeacher) {
+              handleToggleStatus(modalTargetTeacher.id);
+            }
+          }}
+        />
+      </>
+    );
+  }
+
+  // OTHERWISE -> RENDER THE REVISED MAIN TEACHERS LIST
   return (
     <div className="space-y-6 animate-fadeIn select-none">
       
@@ -189,7 +249,7 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
             Dashboard
           </button>
           <span>/</span>
-          <span className="text-slate-800 font-bold">Teachers Management</span>
+          <span className="text-slate-800 font-bold">Teachers</span>
         </div>
       )}
 
@@ -231,7 +291,7 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
         </div>
       </div>
 
-      {/* 5. Search and Filtering Controls */}
+      {/* 4. Search and Filtering Controls */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           
@@ -250,7 +310,7 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -308,26 +368,22 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
         )}
       </div>
 
-      {/* 2. Teachers List */}
+      {/* REVISED TEACHERS LIST (Displays ONLY: 1. Full Name, 2. Assigned Class, 3. Total Students) */}
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         
         {/* DESKTOP TABLE VIEW */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full text-left text-xs sm:text-sm border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
-                <th className="py-3.5 px-5">Teacher's Full Name</th>
-                <th className="py-3.5 px-4">Phone Number</th>
-                <th className="py-3.5 px-4">Assigned Class(es)</th>
-                <th className="py-3.5 px-4">Students</th>
-                <th className="py-3.5 px-4">Account Status</th>
-                <th className="py-3.5 px-5 text-right">Actions</th>
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-xs">
+                <th className="py-3.5 px-6">1. Teacher's Full Name</th>
+                <th className="py-3.5 px-6">2. Assigned Class or Classes</th>
+                <th className="py-3.5 px-6 text-right">3. Total Assigned Students</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredTeachers.length > 0 ? (
                 filteredTeachers.map((teacher) => {
-                  const isActive = teacher.status === 'active';
                   const initials = teacher.name
                     .split(' ')
                     .map((n: string) => n[0])
@@ -337,174 +393,54 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
                   return (
                     <tr
                       key={teacher.id}
-                      className="hover:bg-slate-50/70 transition-colors group"
+                      onClick={() => setActiveTeacherId(teacher.id)}
+                      className="hover:bg-emerald-50/50 transition-colors group cursor-pointer"
+                      title="Click to view full teacher details"
                     >
-                      {/* 1. Name & Qualification */}
-                      <td className="py-3.5 px-5">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-9 h-9 rounded-xl font-bold flex items-center justify-center shrink-0 ${
-                              isActive
-                                ? 'bg-emerald-100 text-emerald-900'
-                                : 'bg-slate-200 text-slate-600'
-                            }`}
-                          >
+                      {/* 1. Teacher's Full Name */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-10 h-10 rounded-xl font-extrabold flex items-center justify-center shrink-0 bg-emerald-800 text-amber-300 shadow-2xs group-hover:scale-105 transition-transform">
                             {initials}
                           </div>
                           <div>
-                            <button
-                              onClick={() => openModal('details', teacher)}
-                              type="button"
-                              className="font-bold text-slate-900 hover:text-emerald-800 transition-colors cursor-pointer text-left"
-                            >
+                            <span className="font-bold text-slate-900 group-hover:text-emerald-900 transition-colors block text-sm sm:text-base">
                               {teacher.name}
-                            </button>
-                            <p className="text-[11px] text-slate-400 truncate max-w-xs">
-                              {teacher.qualification}
-                            </p>
+                            </span>
+                            <span className="text-[11px] text-slate-400 group-hover:text-emerald-700 transition-colors">
+                              Click to view full profile & actions →
+                            </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* 2. Phone Number */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                          <Phone className="w-3.5 h-3.5 text-slate-400" />
-                          <a
-                            href={`tel:${teacher.phone}`}
-                            className="hover:text-emerald-800 hover:underline"
-                          >
-                            {teacher.phone}
-                          </a>
-                        </div>
-                      </td>
-
-                      {/* 3. Assigned Classes */}
-                      <td className="py-3.5 px-4">
+                      {/* 2. Assigned Class or Classes */}
+                      <td className="py-4 px-6">
                         {teacher.assignedClasses.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-1.5">
                             {teacher.assignedClasses.map((cls: string) => (
                               <span
                                 key={cls}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 font-semibold text-[11px]"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 font-bold text-xs"
                               >
-                                <Layers className="w-3 h-3 text-emerald-600" />
+                                <Layers className="w-3.5 h-3.5 text-emerald-700" />
                                 {cls}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-[11px] text-slate-400 italic">Unassigned</span>
+                          <span className="text-xs text-slate-400 italic">None (Unassigned)</span>
                         )}
                       </td>
 
-                      {/* Students Count */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-semibold text-slate-700">
-                          {teacher.studentCount} Students
-                        </span>
-                      </td>
-
-                      {/* 4. Status Badge */}
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                            isActive
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : 'bg-red-50 text-red-800 border-red-200'
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isActive ? 'bg-emerald-600' : 'bg-red-600'
-                            }`}
-                          />
-                          {isActive ? 'Active' : 'Suspended'}
-                        </span>
-                      </td>
-
-                      {/* 5. Actions */}
-                      <td className="py-3.5 px-5 text-right">
-                        <div className="relative inline-block text-left">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setOpenActionMenuId(
-                                openActionMenuId === teacher.id ? null : teacher.id
-                              )
-                            }
-                            className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                            aria-label="Teacher actions"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-
-                          {/* Action Dropdown Menu */}
-                          {openActionMenuId === teacher.id && (
-                            <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-1.5 text-xs animate-fadeIn">
-                              <button
-                                onClick={() => openModal('details', teacher)}
-                                className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
-                              >
-                                <Eye className="w-3.5 h-3.5 text-slate-400" />
-                                <span>View Details</span>
-                              </button>
-
-                              <button
-                                onClick={() => openModal('edit', teacher)}
-                                className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
-                              >
-                                <Edit className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Edit Information</span>
-                              </button>
-
-                              <button
-                                onClick={() => openModal('assign', teacher)}
-                                className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
-                              >
-                                <Layers className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Assign / Change Classes</span>
-                              </button>
-
-                              <button
-                                onClick={() => openModal('students', teacher)}
-                                className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
-                              >
-                                <Users className="w-3.5 h-3.5 text-slate-400" />
-                                <span>View Assigned Students</span>
-                              </button>
-
-                              {teacher.studentCount > 0 && (
-                                <button
-                                  onClick={() => openModal('transfer', teacher)}
-                                  className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-amber-700 cursor-pointer"
-                                >
-                                  <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" />
-                                  <span>Transfer Students</span>
-                                </button>
-                              )}
-
-                              <div className="pt-1 mt-1 border-t border-slate-100">
-                                {isActive ? (
-                                  <button
-                                    onClick={() => openModal('suspend', teacher)}
-                                    className="w-full px-3.5 py-2 text-left hover:bg-red-50 flex items-center gap-2 text-red-700 cursor-pointer font-medium"
-                                  >
-                                    <Ban className="w-3.5 h-3.5" />
-                                    <span>Suspend Account</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => openModal('suspend', teacher)}
-                                    className="w-full px-3.5 py-2 text-left hover:bg-emerald-50 flex items-center gap-2 text-emerald-800 cursor-pointer font-medium"
-                                  >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                    <span>Reactivate Account</span>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                      {/* 3. Total Number of Students Assigned */}
+                      <td className="py-4 px-6 text-right">
+                        <div className="inline-flex items-center gap-2">
+                          <span className="font-extrabold text-slate-900 text-sm sm:text-base">
+                            {teacher.studentCount}
+                          </span>
+                          <span className="text-xs text-slate-500 font-medium">Students</span>
+                          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-700 group-hover:translate-x-1 transition-all" />
                         </div>
                       </td>
                     </tr>
@@ -512,7 +448,7 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={3} className="py-12 text-center text-slate-400">
                     <XCircle className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                     <p className="text-sm font-semibold text-slate-600">No teachers found</p>
                     <p className="text-xs text-slate-400 mt-1">
@@ -520,7 +456,7 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
                     </p>
                     <button
                       onClick={resetFilters}
-                      className="mt-3 text-xs font-bold text-emerald-800 hover:underline"
+                      className="mt-3 text-xs font-bold text-emerald-800 hover:underline cursor-pointer"
                     >
                       Clear all filters
                     </button>
@@ -531,102 +467,52 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
           </table>
         </div>
 
-        {/* MOBILE RESPONSIVE CARDS VIEW (Android & iPhone) */}
-        <div className="lg:hidden divide-y divide-slate-100">
+        {/* MOBILE RESPONSIVE CARDS VIEW (Entire card clickable) */}
+        <div className="sm:hidden divide-y divide-slate-100">
           {filteredTeachers.length > 0 ? (
             filteredTeachers.map((teacher) => {
-              const isActive = teacher.status === 'active';
-                const initials = teacher.name
-                  .split(' ')
-                  .map((n: string) => n[0])
-                  .slice(0, 2)
-                  .join('');
+              const initials = teacher.name
+                .split(' ')
+                .map((n: string) => n[0])
+                .slice(0, 2)
+                .join('');
 
               return (
-                <div key={teacher.id} className="p-4 sm:p-5 space-y-3">
-                  {/* Top card row */}
-                  <div className="flex items-start justify-between gap-3">
+                <div
+                  key={teacher.id}
+                  onClick={() => setActiveTeacherId(teacher.id)}
+                  className="p-4 space-y-2.5 active:bg-emerald-50/60 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    {/* 1. Full Name */}
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center shrink-0 ${
-                          isActive
-                            ? 'bg-emerald-100 text-emerald-900'
-                            : 'bg-slate-200 text-slate-600'
-                        }`}
-                      >
+                      <div className="w-10 h-10 rounded-xl bg-emerald-800 text-amber-300 font-extrabold text-xs flex items-center justify-center shrink-0">
                         {initials}
                       </div>
                       <div>
                         <h3 className="font-bold text-slate-900 text-sm">{teacher.name}</h3>
-                        <p className="text-[11px] text-slate-400 line-clamp-1">
-                          {teacher.qualification}
-                        </p>
+                        <p className="text-[11px] text-emerald-800">Tap to view details →</p>
                       </div>
                     </div>
 
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${
-                        isActive
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                          : 'bg-red-50 text-red-800 border-red-200'
-                      }`}
-                    >
-                      {isActive ? 'Active' : 'Suspended'}
-                    </span>
+                    <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
                   </div>
 
-                  {/* Middle details */}
-                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Phone</span>
-                      <a href={`tel:${teacher.phone}`} className="font-semibold text-slate-800 flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        {teacher.phone}
-                      </a>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Assigned Class</span>
-                      <span className="font-semibold text-emerald-800 truncate block">
+                  {/* 2. Assigned Class & 3. Total Students */}
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-400 text-[11px]">Class:</span>
+                      <span className="font-bold text-emerald-900">
                         {teacher.assignedClasses.join(', ') || 'Unassigned'}
                       </span>
                     </div>
-                  </div>
 
-                  {/* Action buttons on mobile */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <button
-                      onClick={() => openModal('details', teacher)}
-                      type="button"
-                      className="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg text-center transition-colors cursor-pointer"
-                    >
-                      Details
-                    </button>
-                    <button
-                      onClick={() => openModal('assign', teacher)}
-                      type="button"
-                      className="flex-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg text-center transition-colors cursor-pointer"
-                    >
-                      Classes
-                    </button>
-                    <button
-                      onClick={() => openModal('students', teacher)}
-                      type="button"
-                      className="flex-1 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-semibold rounded-lg text-center transition-colors cursor-pointer"
-                    >
-                      Students
-                    </button>
-                    <button
-                      onClick={() => openModal('suspend', teacher)}
-                      type="button"
-                      className={`p-1.5 rounded-lg border text-xs font-bold transition-colors cursor-pointer ${
-                        isActive
-                          ? 'border-red-200 text-red-700 hover:bg-red-50'
-                          : 'border-emerald-200 text-emerald-800 hover:bg-emerald-50'
-                      }`}
-                      title={isActive ? 'Suspend' : 'Reactivate'}
-                    >
-                      {isActive ? <Ban className="w-4 h-4" /> : <RotateCcw className="w-4 h-4" />}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-400 text-[11px]">Students:</span>
+                      <span className="font-extrabold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full">
+                        {teacher.studentCount}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -637,7 +523,7 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
               <p className="text-sm font-semibold text-slate-600">No teachers found</p>
               <button
                 onClick={resetFilters}
-                className="mt-2 text-xs font-bold text-emerald-800 hover:underline"
+                className="mt-2 text-xs font-bold text-emerald-800 hover:underline cursor-pointer"
               >
                 Reset filters
               </button>
@@ -648,17 +534,10 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
         {/* Footer Roster Summary */}
         <div className="p-4 bg-slate-50/90 border-t border-slate-200/80 text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <span>
-            Total: <strong>{teachers.length}</strong> Registered Teachers •{' '}
-            <span className="text-emerald-700 font-semibold">
-              {teachers.filter((t) => t.status === 'active').length} Active
-            </span>{' '}
-            •{' '}
-            <span className="text-red-600 font-semibold">
-              {teachers.filter((t) => t.status === 'suspended').length} Suspended
-            </span>
+            Total: <strong>{teachers.length}</strong> Registered Teachers • Click any teacher record to view full profile & actions.
           </span>
           <span className="text-[11px] text-slate-400 font-mono">
-            Al-Mustafeed Faculty Registry v1.0
+            Al-Mustafeed Faculty Registry
           </span>
         </div>
       </div>
@@ -670,65 +549,36 @@ export const TeachersPage: FC<TeachersPageProps> = ({ onBackToDashboard }) => {
         onAddTeacher={handleAddTeacher}
       />
 
-      {/* 4. Teacher Details Modal */}
-      <TeacherDetailsModal
-        teacher={selectedTeacher}
-        isOpen={activeModal === 'details'}
-        onClose={closeModal}
-        onEdit={() => {
-          closeModal();
-          if (selectedTeacher) {
-            setActiveModal('edit');
-          }
-        }}
-      />
-
-      {/* 4. Edit Teacher Information Modal */}
+      {/* Action Modals */}
       <EditTeacherModal
-        teacher={selectedTeacher}
+        teacher={modalTargetTeacher}
         isOpen={activeModal === 'edit'}
-        onClose={closeModal}
+        onClose={closeActionModal}
         onUpdateTeacher={handleUpdateTeacher}
       />
 
-      {/* 4. Assign or Change Classes Modal */}
       <AssignClassModal
-        teacher={selectedTeacher}
+        teacher={modalTargetTeacher}
         isOpen={activeModal === 'assign'}
-        onClose={closeModal}
+        onClose={closeActionModal}
         onAssignClasses={handleAssignClasses}
       />
 
-      {/* 4. View Assigned Students Modal */}
-      <ViewStudentsModal
-        teacher={selectedTeacher}
-        isOpen={activeModal === 'students'}
-        onClose={closeModal}
-        onOpenTransfer={() => {
-          closeModal();
-          if (selectedTeacher) {
-            setActiveModal('transfer');
-          }
-        }}
-      />
-
-      {/* 4. Transfer Students to Another Teacher Modal */}
       <TransferStudentsModal
-        sourceTeacher={selectedTeacher}
+        sourceTeacher={modalTargetTeacher}
         allTeachers={teachers}
         isOpen={activeModal === 'transfer'}
-        onClose={closeModal}
+        onClose={closeActionModal}
         onTransfer={handleTransferStudents}
       />
 
-      {/* 4. Suspend or Reactivate Confirmation Modal */}
       <SuspendConfirmModal
-        teacher={selectedTeacher}
+        teacher={modalTargetTeacher}
         isOpen={activeModal === 'suspend'}
-        onClose={closeModal}
+        onClose={closeActionModal}
         onConfirm={() => {
-          if (selectedTeacher) {
-            handleToggleStatus(selectedTeacher.id);
+          if (modalTargetTeacher) {
+            handleToggleStatus(modalTargetTeacher.id);
           }
         }}
       />

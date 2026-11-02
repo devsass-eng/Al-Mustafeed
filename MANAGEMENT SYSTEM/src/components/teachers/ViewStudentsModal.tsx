@@ -143,3 +143,4 @@ export const ViewStudentsModal: FC<ViewStudentsModalProps> = ({
     </div>
   );
 };
+

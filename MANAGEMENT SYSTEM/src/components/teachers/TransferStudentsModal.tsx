@@ -154,3 +154,4 @@ export const TransferStudentsModal: FC<TransferStudentsModalProps> = ({
     </div>
   );
 };
+

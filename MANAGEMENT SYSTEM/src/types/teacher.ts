@@ -6,6 +6,7 @@ export interface Teacher {
   assignedClasses: string[];
   status: 'active' | 'suspended';
   joinedDate: string;
+  accountCreationDate: string;
   studentCount: number;
   qualification: string;
   accountCreated: boolean;
