@@ -8,6 +8,7 @@ import { QuickNavGrid } from '../components/admin/QuickNavGrid';
 import { RecentActivities } from '../components/admin/RecentActivities';
 import { SectionPlaceholder } from '../components/admin/SectionPlaceholder';
 import { TeachersPage } from './TeachersPage';
+import { StudentsPage } from './StudentsPage';
 import { Sparkles, Calendar, ShieldCheck } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -113,6 +114,8 @@ export const AdminDashboard: FC<AdminDashboardProps> = ({ onLogout }) => {
               </div>
             ) : currentTab === 'teachers' ? (
               <TeachersPage onBackToDashboard={() => setCurrentTab('overview')} />
+            ) : currentTab === 'students' ? (
+              <StudentsPage onBackToDashboard={() => setCurrentTab('overview')} />
             ) : (
               /* Specific Feature Placeholder Page */
               <SectionPlaceholder
